@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { db, type Equipamento, type Movimentacao } from "@/lib/db";
+import { db, type Equipamento, type HistoricoEvento } from "@/lib/db";
 
 export const Route = createFileRoute("/equipamentos")({
   head: () => ({ meta: [{ title: "Equipamentos" }] }),
