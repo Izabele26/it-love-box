@@ -96,7 +96,9 @@ function DetalhesDialog({ equipamento, onClose }: { equipamento: Equipamento | n
 function Page() {
   const [rows, setRows] = useState<Equipamento[]>([]);
   const [editing, setEditing] = useState<Equipamento | null>(null);
+  const [detalhes, setDetalhes] = useState<Equipamento | null>(null);
   const [form, setForm] = useState({ patrimonio: "", tipo: "", marca: "", modelo: "", status: "disponivel" });
+
 
   async function load() {
     const { data, error } = await db.from("equipamentos").select("*").order("patrimonio");
