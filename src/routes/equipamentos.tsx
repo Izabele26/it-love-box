@@ -202,6 +202,7 @@ function Page() {
                 <TableCell>{eq.modelo}</TableCell>
                 <TableCell>{eq.status}</TableCell>
                 <TableCell className="text-right space-x-2">
+                  <Button size="sm" variant="secondary" onClick={() => setDetalhes(eq)}>Detalhes</Button>
                   <Button size="sm" variant="outline" onClick={() => edit(eq)}>Editar</Button>
                   <Button size="sm" variant="destructive" onClick={() => remove(eq.id)}>Excluir</Button>
                 </TableCell>
