@@ -211,6 +211,8 @@ function Page() {
           </TableBody>
         </Table>
       </Card>
+
+      <DetalhesDialog equipamento={detalhes} onClose={() => setDetalhes(null)} />
     </div>
   );
 }
