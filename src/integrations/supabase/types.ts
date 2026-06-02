@@ -68,6 +68,100 @@ export type Database = {
         }
         Relationships: []
       }
+      historico_equipamentos: {
+        Row: {
+          criado_em: string
+          descricao: string | null
+          equipamento_id: string
+          id: string
+          responsavel: string | null
+          tipo_evento: string
+        }
+        Insert: {
+          criado_em?: string
+          descricao?: string | null
+          equipamento_id: string
+          id?: string
+          responsavel?: string | null
+          tipo_evento: string
+        }
+        Update: {
+          criado_em?: string
+          descricao?: string | null
+          equipamento_id?: string
+          id?: string
+          responsavel?: string | null
+          tipo_evento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_equipamentos_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "equipamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspecoes: {
+        Row: {
+          checklist: Json
+          criado_em: string
+          data_inspecao: string
+          equipamento_id: string | null
+          hora_inspecao: string
+          id: string
+          observacoes: string | null
+          patrimonio: string | null
+          problema_identificado: string | null
+          quantidade_vistoriados: number
+          responsavel_setor: string
+          setor: string
+          tecnico_responsavel: string
+          tipo_equipamento: string | null
+        }
+        Insert: {
+          checklist?: Json
+          criado_em?: string
+          data_inspecao: string
+          equipamento_id?: string | null
+          hora_inspecao: string
+          id?: string
+          observacoes?: string | null
+          patrimonio?: string | null
+          problema_identificado?: string | null
+          quantidade_vistoriados?: number
+          responsavel_setor: string
+          setor: string
+          tecnico_responsavel: string
+          tipo_equipamento?: string | null
+        }
+        Update: {
+          checklist?: Json
+          criado_em?: string
+          data_inspecao?: string
+          equipamento_id?: string | null
+          hora_inspecao?: string
+          id?: string
+          observacoes?: string | null
+          patrimonio?: string | null
+          problema_identificado?: string | null
+          quantidade_vistoriados?: number
+          responsavel_setor?: string
+          setor?: string
+          tecnico_responsavel?: string
+          tipo_equipamento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspecoes_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "equipamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimentacoes: {
         Row: {
           colaborador_id: string

@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { db, type Equipamento, type Movimentacao } from "@/lib/db";
+import { db, type Equipamento, type HistoricoEvento } from "@/lib/db";
 
 export const Route = createFileRoute("/equipamentos")({
   head: () => ({ meta: [{ title: "Equipamentos" }] }),
@@ -20,16 +20,16 @@ export const Route = createFileRoute("/equipamentos")({
 const STATUS = ["disponivel", "em_uso", "manutencao", "baixado"];
 
 function DetalhesDialog({ equipamento, onClose }: { equipamento: Equipamento | null; onClose: () => void }) {
-  const [hist, setHist] = useState<Movimentacao[]>([]);
+  const [hist, setHist] = useState<HistoricoEvento[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!equipamento) return;
     setLoading(true);
-    db.from("movimentacoes")
-      .select("*, colaboradores(*)")
+    db.from("historico_equipamentos")
+      .select("*")
       .eq("equipamento_id", equipamento.id)
-      .order("data", { ascending: false })
+      .order("criado_em", { ascending: true })
       .then(({ data, error }: any) => {
         if (error) toast.error(error.message);
         setHist(data ?? []);
@@ -37,9 +37,27 @@ function DetalhesDialog({ equipamento, onClose }: { equipamento: Equipamento | n
       });
   }, [equipamento]);
 
+  const eventoLabel = (t: string) => {
+    const map: Record<string, string> = {
+      cadastro: "Cadastro",
+      entrega: "Entrega",
+      devolucao: "Devolução",
+      inspecao: "Inspeção técnica",
+      problema_identificado: "Problema identificado",
+      problema_resolvido: "Problema resolvido",
+      mudanca_responsavel: "Mudança de responsável",
+      mudanca_setor: "Mudança de setor",
+      manutencao_entrada: "Entrada em manutenção",
+      manutencao_retorno: "Retorno de manutenção",
+      baixa: "Baixa patrimonial",
+      descarte: "Descarte",
+    };
+    return map[t] ?? t;
+  };
+
   return (
     <Dialog open={!!equipamento} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{equipamento ? `${equipamento.patrimonio} — ${equipamento.modelo}` : ""}</DialogTitle>
         </DialogHeader>
@@ -60,30 +78,23 @@ function DetalhesDialog({ equipamento, onClose }: { equipamento: Equipamento | n
               {loading ? (
                 <p className="text-center text-muted-foreground py-6">Carregando...</p>
               ) : hist.length === 0 ? (
-                <p className="text-center text-muted-foreground py-6">Sem movimentações para este equipamento</p>
+                <p className="text-center text-muted-foreground py-6">Sem eventos registrados</p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Colaborador</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {hist.map((m) => (
-                      <TableRow key={m.id}>
-                        <TableCell>{new Date(m.data).toLocaleDateString("pt-BR")}</TableCell>
-                        <TableCell>
-                          <Badge variant={m.tipo === "entrega" ? "default" : "secondary"}>
-                            {m.tipo === "entrega" ? "Entrega" : "Devolução"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{m.colaboradores?.nome ?? "-"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <ol className="relative border-l-2 border-border ml-3 space-y-4">
+                  {hist.map((h) => (
+                    <li key={h.id} className="ml-4">
+                      <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full bg-primary" />
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(h.criado_em).toLocaleString("pt-BR")}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge variant="secondary">{eventoLabel(h.tipo_evento)}</Badge>
+                        {h.responsavel && <span className="text-sm text-muted-foreground">{h.responsavel}</span>}
+                      </div>
+                      {h.descricao && <div className="text-sm mt-1">{h.descricao}</div>}
+                    </li>
+                  ))}
+                </ol>
               )}
             </TabsContent>
           </Tabs>
