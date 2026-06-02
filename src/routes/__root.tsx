@@ -103,6 +103,7 @@ function RootComponent() {
               <NavLink to="/equipamentos">Equipamentos</NavLink>
               <NavLink to="/entregas">Entregas</NavLink>
               <NavLink to="/devolucoes">Devoluções</NavLink>
+              <NavLink to="/inspecoes">Inspeções Técnicas</NavLink>
             </nav>
           </div>
         </header>
