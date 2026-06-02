@@ -6,8 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { db, type Equipamento } from "@/lib/db";
+import { db, type Equipamento, type Movimentacao } from "@/lib/db";
 
 export const Route = createFileRoute("/equipamentos")({
   head: () => ({ meta: [{ title: "Equipamentos" }] }),
@@ -16,10 +19,86 @@ export const Route = createFileRoute("/equipamentos")({
 
 const STATUS = ["disponivel", "em_uso", "manutencao", "baixado"];
 
+function DetalhesDialog({ equipamento, onClose }: { equipamento: Equipamento | null; onClose: () => void }) {
+  const [hist, setHist] = useState<Movimentacao[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!equipamento) return;
+    setLoading(true);
+    db.from("movimentacoes")
+      .select("*, colaboradores(*)")
+      .eq("equipamento_id", equipamento.id)
+      .order("data", { ascending: false })
+      .then(({ data, error }: any) => {
+        if (error) toast.error(error.message);
+        setHist(data ?? []);
+        setLoading(false);
+      });
+  }, [equipamento]);
+
+  return (
+    <Dialog open={!!equipamento} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{equipamento ? `${equipamento.patrimonio} — ${equipamento.modelo}` : ""}</DialogTitle>
+        </DialogHeader>
+        {equipamento && (
+          <Tabs defaultValue="dados">
+            <TabsList>
+              <TabsTrigger value="dados">Dados</TabsTrigger>
+              <TabsTrigger value="historico">Histórico</TabsTrigger>
+            </TabsList>
+            <TabsContent value="dados" className="space-y-2 pt-4 text-sm">
+              <div><span className="text-muted-foreground">Patrimônio:</span> {equipamento.patrimonio}</div>
+              <div><span className="text-muted-foreground">Tipo:</span> {equipamento.tipo}</div>
+              <div><span className="text-muted-foreground">Marca:</span> {equipamento.marca}</div>
+              <div><span className="text-muted-foreground">Modelo:</span> {equipamento.modelo}</div>
+              <div><span className="text-muted-foreground">Status:</span> {equipamento.status}</div>
+            </TabsContent>
+            <TabsContent value="historico" className="pt-4">
+              {loading ? (
+                <p className="text-center text-muted-foreground py-6">Carregando...</p>
+              ) : hist.length === 0 ? (
+                <p className="text-center text-muted-foreground py-6">Sem movimentações para este equipamento</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Colaborador</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {hist.map((m) => (
+                      <TableRow key={m.id}>
+                        <TableCell>{new Date(m.data).toLocaleDateString("pt-BR")}</TableCell>
+                        <TableCell>
+                          <Badge variant={m.tipo === "entrega" ? "default" : "secondary"}>
+                            {m.tipo === "entrega" ? "Entrega" : "Devolução"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{m.colaboradores?.nome ?? "-"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </TabsContent>
+          </Tabs>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function Page() {
   const [rows, setRows] = useState<Equipamento[]>([]);
   const [editing, setEditing] = useState<Equipamento | null>(null);
+  const [detalhes, setDetalhes] = useState<Equipamento | null>(null);
   const [form, setForm] = useState({ patrimonio: "", tipo: "", marca: "", modelo: "", status: "disponivel" });
+
 
   async function load() {
     const { data, error } = await db.from("equipamentos").select("*").order("patrimonio");
@@ -123,6 +202,7 @@ function Page() {
                 <TableCell>{eq.modelo}</TableCell>
                 <TableCell>{eq.status}</TableCell>
                 <TableCell className="text-right space-x-2">
+                  <Button size="sm" variant="secondary" onClick={() => setDetalhes(eq)}>Detalhes</Button>
                   <Button size="sm" variant="outline" onClick={() => edit(eq)}>Editar</Button>
                   <Button size="sm" variant="destructive" onClick={() => remove(eq.id)}>Excluir</Button>
                 </TableCell>
@@ -131,6 +211,8 @@ function Page() {
           </TableBody>
         </Table>
       </Card>
+
+      <DetalhesDialog equipamento={detalhes} onClose={() => setDetalhes(null)} />
     </div>
   );
 }
