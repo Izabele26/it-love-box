@@ -26,4 +26,30 @@ export type Movimentacao = {
   equipamentos?: Equipamento;
 };
 
+export type HistoricoEvento = {
+  id: string;
+  equipamento_id: string;
+  tipo_evento: string;
+  descricao: string | null;
+  responsavel: string | null;
+  criado_em: string;
+};
+
+export type Inspecao = {
+  id: string;
+  equipamento_id: string | null;
+  setor: string;
+  responsavel_setor: string;
+  tecnico_responsavel: string;
+  data_inspecao: string;
+  hora_inspecao: string;
+  quantidade_vistoriados: number;
+  patrimonio: string | null;
+  tipo_equipamento: string | null;
+  problema_identificado: string | null;
+  observacoes: string | null;
+  checklist: Record<string, any>;
+  criado_em: string;
+};
+
 export const db = supabase as any;
