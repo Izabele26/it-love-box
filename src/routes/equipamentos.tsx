@@ -57,15 +57,15 @@ function DetalhesDialog({ equipamento, onClose }: { equipamento: Equipamento | n
 
   return (
     <Dialog open={!!equipamento} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[calc(100vw-1.5rem)]">
         <DialogHeader>
-          <DialogTitle>{equipamento ? `${equipamento.patrimonio} — ${equipamento.modelo}` : ""}</DialogTitle>
+          <DialogTitle className="text-base md:text-lg pr-6">{equipamento ? `${equipamento.patrimonio} — ${equipamento.modelo}` : ""}</DialogTitle>
         </DialogHeader>
         {equipamento && (
           <Tabs defaultValue="dados">
-            <TabsList>
-              <TabsTrigger value="dados">Dados</TabsTrigger>
-              <TabsTrigger value="historico">Histórico</TabsTrigger>
+            <TabsList className="w-full">
+              <TabsTrigger value="dados" className="flex-1">Dados</TabsTrigger>
+              <TabsTrigger value="historico" className="flex-1">Histórico</TabsTrigger>
             </TabsList>
             <TabsContent value="dados" className="space-y-2 pt-4 text-sm">
               <div><span className="text-muted-foreground">Patrimônio:</span> {equipamento.patrimonio}</div>
@@ -87,7 +87,7 @@ function DetalhesDialog({ equipamento, onClose }: { equipamento: Equipamento | n
                       <div className="text-xs text-muted-foreground">
                         {new Date(h.criado_em).toLocaleString("pt-BR")}
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         <Badge variant="secondary">{eventoLabel(h.tipo_evento)}</Badge>
                         {h.responsavel && <span className="text-sm text-muted-foreground">{h.responsavel}</span>}
                       </div>
@@ -109,7 +109,6 @@ function Page() {
   const [editing, setEditing] = useState<Equipamento | null>(null);
   const [detalhes, setDetalhes] = useState<Equipamento | null>(null);
   const [form, setForm] = useState({ patrimonio: "", tipo: "", marca: "", modelo: "", status: "disponivel" });
-
 
   async function load() {
     const { data, error } = await db.from("equipamentos").select("*").order("patrimonio");
@@ -150,46 +149,75 @@ function Page() {
   function edit(e: Equipamento) {
     setEditing(e);
     setForm({ patrimonio: e.patrimonio, tipo: e.tipo, marca: e.marca, modelo: e.modelo, status: e.status });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  const statusVariant = (s: string): "default" | "secondary" | "destructive" | "outline" => {
+    if (s === "em_uso") return "default";
+    if (s === "manutencao") return "destructive";
+    if (s === "baixado") return "outline";
+    return "secondary";
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <h2 className="text-2xl font-bold">Equipamentos</h2>
       <Card className="p-4">
         <form onSubmit={save} className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label>Patrimônio</Label>
-            <Input value={form.patrimonio} onChange={(e) => setForm({ ...form, patrimonio: e.target.value })} />
+            <Input className="h-12 md:h-10 text-base" value={form.patrimonio} onChange={(e) => setForm({ ...form, patrimonio: e.target.value })} />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label>Tipo</Label>
-            <Input value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} placeholder="Notebook, Monitor..." />
+            <Input className="h-12 md:h-10 text-base" value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} placeholder="Notebook, Monitor..." />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label>Marca</Label>
-            <Input value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} />
+            <Input className="h-12 md:h-10 text-base" value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label>Modelo</Label>
-            <Input value={form.modelo} onChange={(e) => setForm({ ...form, modelo: e.target.value })} />
+            <Input className="h-12 md:h-10 text-base" value={form.modelo} onChange={(e) => setForm({ ...form, modelo: e.target.value })} />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label>Status</Label>
             <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-12 md:h-10 text-base"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {STATUS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end gap-2">
-            <Button type="submit">{editing ? "Salvar" : "Cadastrar"}</Button>
-            {editing && <Button type="button" variant="outline" onClick={reset}>Cancelar</Button>}
+          <div className="flex flex-col md:flex-row md:items-end gap-2">
+            <Button type="submit" className="h-12 md:h-10 w-full md:w-auto text-base">{editing ? "Salvar" : "Cadastrar"}</Button>
+            {editing && <Button type="button" variant="outline" className="h-12 md:h-10 w-full md:w-auto" onClick={reset}>Cancelar</Button>}
           </div>
         </form>
       </Card>
 
-      <Card>
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-3">
+        {rows.length === 0 && <p className="text-center text-muted-foreground py-8">Nenhum equipamento cadastrado</p>}
+        {rows.map((eq) => (
+          <Card key={eq.id} className="p-4 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="font-semibold">{eq.patrimonio}</div>
+              <Badge variant={statusVariant(eq.status)}>{eq.status}</Badge>
+            </div>
+            <div className="text-sm">{eq.tipo} · {eq.marca}</div>
+            <div className="text-sm text-muted-foreground">{eq.modelo}</div>
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              <Button size="lg" variant="secondary" className="h-11" onClick={() => setDetalhes(eq)}>Detalhes</Button>
+              <Button size="lg" variant="outline" className="h-11" onClick={() => edit(eq)}>Editar</Button>
+              <Button size="lg" variant="destructive" className="h-11" onClick={() => remove(eq.id)}>Excluir</Button>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <Card className="hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>

@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as MenuRouteImport } from './routes/menu'
 import { Route as InspecoesRouteImport } from './routes/inspecoes'
 import { Route as EquipamentosRouteImport } from './routes/equipamentos'
 import { Route as EntregasRouteImport } from './routes/entregas'
 import { Route as DevolucoesRouteImport } from './routes/devolucoes'
 import { Route as IndexRouteImport } from './routes/index'
 
+const MenuRoute = MenuRouteImport.update({
+  id: '/menu',
+  path: '/menu',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InspecoesRoute = InspecoesRouteImport.update({
   id: '/inspecoes',
   path: '/inspecoes',
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/entregas': typeof EntregasRoute
   '/equipamentos': typeof EquipamentosRoute
   '/inspecoes': typeof InspecoesRoute
+  '/menu': typeof MenuRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/entregas': typeof EntregasRoute
   '/equipamentos': typeof EquipamentosRoute
   '/inspecoes': typeof InspecoesRoute
+  '/menu': typeof MenuRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,12 +70,25 @@ export interface FileRoutesById {
   '/entregas': typeof EntregasRoute
   '/equipamentos': typeof EquipamentosRoute
   '/inspecoes': typeof InspecoesRoute
+  '/menu': typeof MenuRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/devolucoes' | '/entregas' | '/equipamentos' | '/inspecoes'
+  fullPaths:
+    | '/'
+    | '/devolucoes'
+    | '/entregas'
+    | '/equipamentos'
+    | '/inspecoes'
+    | '/menu'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/devolucoes' | '/entregas' | '/equipamentos' | '/inspecoes'
+  to:
+    | '/'
+    | '/devolucoes'
+    | '/entregas'
+    | '/equipamentos'
+    | '/inspecoes'
+    | '/menu'
   id:
     | '__root__'
     | '/'
@@ -75,6 +96,7 @@ export interface FileRouteTypes {
     | '/entregas'
     | '/equipamentos'
     | '/inspecoes'
+    | '/menu'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -83,10 +105,18 @@ export interface RootRouteChildren {
   EntregasRoute: typeof EntregasRoute
   EquipamentosRoute: typeof EquipamentosRoute
   InspecoesRoute: typeof InspecoesRoute
+  MenuRoute: typeof MenuRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/menu': {
+      id: '/menu'
+      path: '/menu'
+      fullPath: '/menu'
+      preLoaderRoute: typeof MenuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inspecoes': {
       id: '/inspecoes'
       path: '/inspecoes'
@@ -131,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   EntregasRoute: EntregasRoute,
   EquipamentosRoute: EquipamentosRoute,
   InspecoesRoute: InspecoesRoute,
+  MenuRoute: MenuRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
