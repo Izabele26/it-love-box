@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { db, type Colaborador, type Equipamento, type Movimentacao } from "@/lib/db";
+import { MovimentoWizard } from "@/components/movimento-wizard";
 
 export const Route = createFileRoute("/devolucoes")({
   head: () => ({ meta: [{ title: "Devoluções" }] }),
@@ -33,8 +34,7 @@ function Page() {
   }
   useEffect(() => { load(); }, []);
 
-  async function save(ev: React.FormEvent) {
-    ev.preventDefault();
+  async function save() {
     if (!form.colaborador_id || !form.equipamento_id || !form.data) return toast.error("Preencha todos os campos");
     const { error } = await db.from("movimentacoes").insert({ ...form, tipo: "devolucao" });
     if (error) return toast.error(error.message);
@@ -53,11 +53,24 @@ function Page() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <h2 className="text-2xl font-bold">Devoluções</h2>
-      <Card className="p-4">
-        <form onSubmit={save} className="grid gap-4 md:grid-cols-4">
-          <div className="space-y-1">
+
+      <div className="md:hidden">
+        <MovimentoWizard
+          colaboradores={colaboradores}
+          equipamentos={equipamentos}
+          value={form}
+          onChange={setForm}
+          onSubmit={save}
+          submitLabel="Registrar devolução"
+          dateLabel="Data de devolução"
+        />
+      </div>
+
+      <Card className="hidden md:block p-4">
+        <form onSubmit={(e) => { e.preventDefault(); save(); }} className="grid gap-4 md:grid-cols-4">
+          <div className="space-y-1.5">
             <Label>Colaborador</Label>
             <Select value={form.colaborador_id} onValueChange={(v) => setForm({ ...form, colaborador_id: v })}>
               <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -66,7 +79,7 @@ function Page() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label>Equipamento</Label>
             <Select value={form.equipamento_id} onValueChange={(v) => setForm({ ...form, equipamento_id: v })}>
               <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -75,7 +88,7 @@ function Page() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label>Data de devolução</Label>
             <Input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} />
           </div>
@@ -85,7 +98,19 @@ function Page() {
         </form>
       </Card>
 
-      <Card>
+      <div className="md:hidden space-y-3">
+        {rows.length === 0 && <p className="text-center text-muted-foreground py-8">Nenhuma devolução registrada</p>}
+        {rows.map((m) => (
+          <Card key={m.id} className="p-4 space-y-1">
+            <div className="text-xs text-muted-foreground">{new Date(m.data).toLocaleDateString("pt-BR")}</div>
+            <div className="font-semibold">{m.colaboradores?.nome ?? "-"}</div>
+            <div className="text-sm">{m.equipamentos ? `${m.equipamentos.patrimonio} · ${m.equipamentos.modelo}` : "-"}</div>
+            <Button size="lg" variant="destructive" className="h-11 w-full mt-2" onClick={() => remove(m.id)}>Excluir</Button>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
