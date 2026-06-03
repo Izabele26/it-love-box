@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import { Users, Laptop, PackageCheck, Undo2, ClipboardCheck, LayoutGrid } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -19,7 +20,7 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <p className="mt-2 text-sm text-muted-foreground">Página não encontrada.</p>
-        <Link to="/" className="mt-6 inline-block rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">
+        <Link to="/" className="mt-6 inline-block rounded-md bg-primary px-4 py-3 text-base text-primary-foreground">
           Início
         </Link>
       </div>
@@ -41,7 +42,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
         <button
           onClick={() => { router.invalidate(); reset(); }}
-          className="mt-6 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
+          className="mt-6 rounded-md bg-primary px-4 py-3 text-base text-primary-foreground"
         >
           Tentar novamente
         </button>
@@ -54,17 +55,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Controle de Equipamentos de TI" },
       { name: "description", content: "Sistema CRUD para controle de equipamentos de TI." },
-      { property: "og:title", content: "Controle de Equipamentos de TI" },
-      { name: "twitter:title", content: "Controle de Equipamentos de TI" },
-      { property: "og:description", content: "Sistema CRUD para controle de equipamentos de TI." },
-      { name: "twitter:description", content: "Sistema CRUD para controle de equipamentos de TI." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7086ea86-e56c-425c-9c68-b8e0414168d5/id-preview-c5f1b945--7c308411-12d7-4ff3-9589-1023af0da014.lovable.app-1780432176497.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7086ea86-e56c-425c-9c68-b8e0414168d5/id-preview-c5f1b945--7c308411-12d7-4ff3-9589-1023af0da014.lovable.app-1780432176497.png" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:type", content: "website" },
+      { name: "theme-color", content: "#0f172a" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
@@ -86,15 +80,47 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-function NavLink({ to, children }: { to: string; children: ReactNode }) {
+const NAV = [
+  { to: "/menu", label: "Menu", icon: LayoutGrid },
+  { to: "/", label: "Colab.", icon: Users },
+  { to: "/equipamentos", label: "Equip.", icon: Laptop },
+  { to: "/entregas", label: "Entrega", icon: PackageCheck },
+  { to: "/devolucoes", label: "Devol.", icon: Undo2 },
+  { to: "/inspecoes", label: "Inspeç.", icon: ClipboardCheck },
+] as const;
+
+function TopNavLink({ to, children }: { to: string; children: ReactNode }) {
   return (
     <Link
       to={to}
       className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition"
       activeProps={{ className: "px-3 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground" }}
+      activeOptions={{ exact: to === "/" }}
     >
       {children}
     </Link>
+  );
+}
+
+function BottomNav() {
+  return (
+    <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-card border-t pb-[env(safe-area-inset-bottom)]">
+      <ul className="grid grid-cols-6">
+        {NAV.map(({ to, label, icon: Icon }) => (
+          <li key={to}>
+            <Link
+              to={to}
+              activeOptions={{ exact: to === "/" }}
+              className="flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] text-muted-foreground active:bg-accent"
+              activeProps={{ className: "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] text-primary font-semibold" }}
+            >
+              <Icon className="h-5 w-5" />
+              <span>{label}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 
@@ -102,22 +128,23 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-background">
-        <header className="border-b bg-card">
-          <div className="mx-auto max-w-6xl px-4 py-3 flex flex-wrap items-center gap-2">
-            <h1 className="text-lg font-semibold mr-4">Controle de TI</h1>
-            <nav className="flex flex-wrap gap-1">
-              <NavLink to="/">Colaboradores</NavLink>
-              <NavLink to="/equipamentos">Equipamentos</NavLink>
-              <NavLink to="/entregas">Entregas</NavLink>
-              <NavLink to="/devolucoes">Devoluções</NavLink>
-              <NavLink to="/inspecoes">Inspeções Técnicas</NavLink>
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
+        <header className="border-b bg-card sticky top-0 z-30">
+          <div className="mx-auto max-w-6xl px-4 py-3 flex items-center gap-2">
+            <h1 className="text-base md:text-lg font-semibold mr-2 md:mr-4">Controle de TI</h1>
+            <nav className="hidden md:flex flex-wrap gap-1">
+              <TopNavLink to="/">Colaboradores</TopNavLink>
+              <TopNavLink to="/equipamentos">Equipamentos</TopNavLink>
+              <TopNavLink to="/entregas">Entregas</TopNavLink>
+              <TopNavLink to="/devolucoes">Devoluções</TopNavLink>
+              <TopNavLink to="/inspecoes">Inspeções Técnicas</TopNavLink>
             </nav>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 py-6">
+        <main className="mx-auto max-w-6xl px-3 md:px-4 py-4 md:py-6">
           <Outlet />
         </main>
+        <BottomNav />
         <Toaster />
       </div>
     </QueryClientProvider>

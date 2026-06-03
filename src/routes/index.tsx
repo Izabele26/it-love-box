@@ -57,33 +57,51 @@ function Page() {
   function edit(c: Colaborador) {
     setEditing(c);
     setForm({ nome: c.nome, matricula: c.matricula, setor: c.setor });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <h2 className="text-2xl font-bold">Colaboradores</h2>
       <Card className="p-4">
         <form onSubmit={save} className="grid gap-4 md:grid-cols-4">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label>Nome</Label>
-            <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+            <Input className="h-12 md:h-10 text-base" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label>Matrícula</Label>
-            <Input value={form.matricula} onChange={(e) => setForm({ ...form, matricula: e.target.value })} />
+            <Input className="h-12 md:h-10 text-base" value={form.matricula} onChange={(e) => setForm({ ...form, matricula: e.target.value })} />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label>Setor</Label>
-            <Input value={form.setor} onChange={(e) => setForm({ ...form, setor: e.target.value })} />
+            <Input className="h-12 md:h-10 text-base" value={form.setor} onChange={(e) => setForm({ ...form, setor: e.target.value })} />
           </div>
-          <div className="flex items-end gap-2">
-            <Button type="submit">{editing ? "Salvar" : "Cadastrar"}</Button>
-            {editing && <Button type="button" variant="outline" onClick={reset}>Cancelar</Button>}
+          <div className="flex flex-col md:flex-row md:items-end gap-2">
+            <Button type="submit" className="h-12 md:h-10 w-full md:w-auto text-base">{editing ? "Salvar" : "Cadastrar"}</Button>
+            {editing && <Button type="button" variant="outline" className="h-12 md:h-10 w-full md:w-auto" onClick={reset}>Cancelar</Button>}
           </div>
         </form>
       </Card>
 
-      <Card>
+      {/* Mobile: cards */}
+      <div className="md:hidden space-y-3">
+        {rows.length === 0 && <p className="text-center text-muted-foreground py-8">Nenhum colaborador cadastrado</p>}
+        {rows.map((c) => (
+          <Card key={c.id} className="p-4 space-y-2">
+            <div className="font-semibold text-base">{c.nome}</div>
+            <div className="text-sm text-muted-foreground">Matrícula: {c.matricula}</div>
+            <div className="text-sm text-muted-foreground">Setor: {c.setor}</div>
+            <div className="flex gap-2 pt-1">
+              <Button size="lg" variant="outline" className="flex-1 h-11" onClick={() => edit(c)}>Editar</Button>
+              <Button size="lg" variant="destructive" className="flex-1 h-11" onClick={() => remove(c.id)}>Excluir</Button>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop: table */}
+      <Card className="hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
