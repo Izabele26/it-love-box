@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
-import { Users, Laptop, PackageCheck, Undo2, ClipboardCheck, LayoutGrid } from "lucide-react";
+import { Users, Laptop, PackageCheck, Undo2, ClipboardCheck, History } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -81,23 +81,23 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 const NAV = [
-  { to: "/menu", label: "Menu", icon: LayoutGrid },
-  { to: "/", label: "Colab.", icon: Users },
-  { to: "/equipamentos", label: "Equip.", icon: Laptop },
-  { to: "/entregas", label: "Entrega", icon: PackageCheck },
-  { to: "/devolucoes", label: "Devol.", icon: Undo2 },
-  { to: "/inspecoes", label: "Inspeç.", icon: ClipboardCheck },
+  { to: "/", label: "Colaboradores", icon: Users },
+  { to: "/equipamentos", label: "Equipamentos", icon: Laptop },
+  { to: "/entregas", label: "Entregas", icon: PackageCheck },
+  { to: "/devolucoes", label: "Devoluções", icon: Undo2 },
+  { to: "/inspecoes", label: "Inspeções Técnicas", icon: ClipboardCheck },
 ] as const;
 
-function TopNavLink({ to, children }: { to: string; children: ReactNode }) {
+function NavItem({ to, label, icon: Icon }: { to: string; label: string; icon: React.ComponentType<{ className?: string }> }) {
   return (
     <Link
       to={to}
-      className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition"
-      activeProps={{ className: "px-3 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground" }}
       activeOptions={{ exact: to === "/" }}
+      className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
+      activeProps={{ className: "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium bg-primary text-primary-foreground" }}
     >
-      {children}
+      <Icon className="h-4 w-4" />
+      <span>{label}</span>
     </Link>
   );
 }
@@ -105,7 +105,7 @@ function TopNavLink({ to, children }: { to: string; children: ReactNode }) {
 function BottomNav() {
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-card border-t pb-[env(safe-area-inset-bottom)]">
-      <ul className="grid grid-cols-6">
+      <ul className="grid grid-cols-5">
         {NAV.map(({ to, label, icon: Icon }) => (
           <li key={to}>
             <Link
@@ -115,7 +115,7 @@ function BottomNav() {
               activeProps={{ className: "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] text-primary font-semibold" }}
             >
               <Icon className="h-5 w-5" />
-              <span>{label}</span>
+              <span>{label.split(" ")[0]}</span>
             </Link>
           </li>
         ))}
@@ -130,14 +130,12 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <header className="border-b bg-card sticky top-0 z-30">
-          <div className="mx-auto max-w-6xl px-4 py-3 flex items-center gap-2">
-            <h1 className="text-base md:text-lg font-semibold mr-2 md:mr-4">Controle de TI</h1>
-            <nav className="hidden md:flex flex-wrap gap-1">
-              <TopNavLink to="/">Colaboradores</TopNavLink>
-              <TopNavLink to="/equipamentos">Equipamentos</TopNavLink>
-              <TopNavLink to="/entregas">Entregas</TopNavLink>
-              <TopNavLink to="/devolucoes">Devoluções</TopNavLink>
-              <TopNavLink to="/inspecoes">Inspeções Técnicas</TopNavLink>
+          <div className="mx-auto max-w-6xl px-4 py-4">
+            <h1 className="text-lg md:text-xl font-semibold tracking-tight">Controle de TI</h1>
+            <nav className="mt-3 flex flex-wrap gap-1.5">
+              {NAV.map((item) => (
+                <NavItem key={item.to} {...item} />
+              ))}
             </nav>
           </div>
         </header>
