@@ -13,7 +13,7 @@ interface Props {
   equipamentos: Equipamento[];
   value: FormState;
   onChange: (v: FormState) => void;
-  onSubmit: () => void | Promise<void>;
+  onSubmit: () => any;
   submitLabel: string;
   dateLabel: string;
 }
