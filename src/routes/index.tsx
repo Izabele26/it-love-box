@@ -1,133 +1,207 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Activity, ClipboardCheck, Laptop, PackageCheck, RotateCcw, Users, Wrench } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { db, type Inspecao, type Movimentacao } from "@/lib/db";
 import { toast } from "sonner";
-import { db, type Colaborador } from "@/lib/db";
 
 export const Route = createFileRoute("/")({
-  head: () => ({ meta: [{ title: "Colaboradores" }] }),
-  component: Page,
+  head: () => ({ meta: [{ title: "Dashboard" }] }),
+  component: DashboardPage,
 });
 
-function Page() {
-  const [rows, setRows] = useState<Colaborador[]>([]);
-  const [editing, setEditing] = useState<Colaborador | null>(null);
-  const [form, setForm] = useState({ nome: "", matricula: "", setor: "" });
+type DashboardStats = {
+  totalEquipamentos: number;
+  emUso: number;
+  disponiveis: number;
+  manutencao: number;
+  colaboradores: number;
+  inspecoesPendentes: number;
+};
 
-  async function load() {
-    const { data, error } = await db.from("colaboradores").select("*").order("nome");
-    if (error) return toast.error(error.message);
-    setRows(data ?? []);
-  }
-  useEffect(() => { load(); }, []);
+type TimelineItem = {
+  id: string;
+  type: "entrega" | "devolucao" | "inspecao";
+  date: string;
+  title: string;
+  description: string;
+};
 
-  function reset() {
-    setEditing(null);
-    setForm({ nome: "", matricula: "", setor: "" });
-  }
+const EMPTY_STATS: DashboardStats = {
+  totalEquipamentos: 0,
+  emUso: 0,
+  disponiveis: 0,
+  manutencao: 0,
+  colaboradores: 0,
+  inspecoesPendentes: 0,
+};
 
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.nome || !form.matricula || !form.setor) return toast.error("Preencha todos os campos");
-    if (editing) {
-      const { error } = await db.from("colaboradores").update(form).eq("id", editing.id);
-      if (error) return toast.error(error.message);
-      toast.success("Colaborador atualizado");
-    } else {
-      const { error } = await db.from("colaboradores").insert(form);
-      if (error) return toast.error(error.message);
-      toast.success("Colaborador cadastrado");
+function numberOrZero(value: number | null | undefined) {
+  return value ?? 0;
+}
+
+function formatDate(date: string) {
+  return new Date(date).toLocaleDateString("pt-BR");
+}
+
+function DashboardPage() {
+  const [stats, setStats] = useState<DashboardStats>(EMPTY_STATS);
+  const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
+  const [inspecoes, setInspecoes] = useState<Inspecao[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function loadDashboard() {
+    setLoading(true);
+    try {
+      const [
+        totalEquipamentos,
+        emUso,
+        disponiveis,
+        manutencao,
+        colaboradores,
+        inspecoesPendentes,
+        ultimasMovimentacoes,
+        ultimasInspecoes,
+      ] = await Promise.all([
+        db.from("equipamentos").select("id", { count: "exact", head: true }),
+        db.from("equipamentos").select("id", { count: "exact", head: true }).eq("status", "em_uso"),
+        db.from("equipamentos").select("id", { count: "exact", head: true }).eq("status", "disponivel"),
+        db.from("equipamentos").select("id", { count: "exact", head: true }).eq("status", "manutencao"),
+        db.from("colaboradores").select("id", { count: "exact", head: true }),
+        db.from("inspecoes").select("id", { count: "exact", head: true }).not("problema_identificado", "is", null),
+        db.from("movimentacoes").select("*, colaboradores(*), equipamentos(*)").order("data", { ascending: false }).limit(6),
+        db.from("inspecoes").select("*").order("data_inspecao", { ascending: false }).limit(4),
+      ]);
+
+      const firstError = [
+        totalEquipamentos,
+        emUso,
+        disponiveis,
+        manutencao,
+        colaboradores,
+        inspecoesPendentes,
+        ultimasMovimentacoes,
+        ultimasInspecoes,
+      ].find((result) => result.error)?.error;
+      if (firstError) throw firstError;
+
+      setStats({
+        totalEquipamentos: numberOrZero(totalEquipamentos.count),
+        emUso: numberOrZero(emUso.count),
+        disponiveis: numberOrZero(disponiveis.count),
+        manutencao: numberOrZero(manutencao.count),
+        colaboradores: numberOrZero(colaboradores.count),
+        inspecoesPendentes: numberOrZero(inspecoesPendentes.count),
+      });
+      setMovimentacoes(ultimasMovimentacoes.data ?? []);
+      setInspecoes(ultimasInspecoes.data ?? []);
+    } catch (error: any) {
+      toast.error(error.message ?? "Erro ao carregar dashboard");
+      setStats(EMPTY_STATS);
+      setMovimentacoes([]);
+      setInspecoes([]);
+    } finally {
+      setLoading(false);
     }
-    reset();
-    load();
   }
 
-  async function remove(id: string) {
-    if (!confirm("Excluir colaborador?")) return;
-    const { error } = await db.from("colaboradores").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Excluído");
-    load();
-  }
+  useEffect(() => {
+    loadDashboard();
+  }, []);
 
-  function edit(c: Colaborador) {
-    setEditing(c);
-    setForm({ nome: c.nome, matricula: c.matricula, setor: c.setor });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  const latestItems = useMemo<TimelineItem[]>(() => {
+    const movimentoItems = movimentacoes.map((movimento) => {
+      const patrimonio = movimento.equipamentos?.patrimonio ?? "Equipamento";
+      const modelo = movimento.equipamentos?.modelo ?? "";
+      const colaborador = movimento.colaboradores?.nome ?? "colaborador";
+      const isEntrega = movimento.tipo === "entrega";
+      return {
+        id: movimento.id,
+        type: movimento.tipo,
+        date: movimento.data,
+        title: isEntrega ? "Entrega" : "Devolução",
+        description: isEntrega
+          ? `${modelo || "Equipamento"} ${patrimonio} entregue para ${colaborador}`
+          : `${modelo || "Equipamento"} ${patrimonio} devolvido`,
+      };
+    });
+
+    const inspecaoItems = inspecoes.map((inspecao) => ({
+      id: inspecao.id,
+      type: "inspecao" as const,
+      date: inspecao.data_inspecao,
+      title: "Inspeção",
+      description: `Inspeção realizada no setor ${inspecao.setor}`,
+    }));
+
+    return [...movimentoItems, ...inspecaoItems]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 8);
+  }, [movimentacoes, inspecoes]);
+
+  const cards = [
+    { label: "Total de Equipamentos", value: stats.totalEquipamentos, icon: Laptop },
+    { label: "Equipamentos em Uso", value: stats.emUso, icon: PackageCheck },
+    { label: "Equipamentos Disponíveis", value: stats.disponiveis, icon: Activity },
+    { label: "Equipamentos em Manutenção", value: stats.manutencao, icon: Wrench },
+    { label: "Colaboradores Ativos", value: stats.colaboradores, icon: Users },
+    { label: "Inspeções Pendentes", value: stats.inspecoesPendentes, icon: ClipboardCheck },
+  ];
 
   return (
-    <div className="space-y-5">
-      <h2 className="text-2xl font-bold">Colaboradores</h2>
-      <Card className="p-4">
-        <form onSubmit={save} className="grid gap-4 md:grid-cols-4">
-          <div className="space-y-1.5">
-            <Label>Nome</Label>
-            <Input className="h-12 md:h-10 text-base" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Matrícula</Label>
-            <Input className="h-12 md:h-10 text-base" value={form.matricula} onChange={(e) => setForm({ ...form, matricula: e.target.value })} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Setor</Label>
-            <Input className="h-12 md:h-10 text-base" value={form.setor} onChange={(e) => setForm({ ...form, setor: e.target.value })} />
-          </div>
-          <div className="flex flex-col md:flex-row md:items-end gap-2">
-            <Button type="submit" className="h-12 md:h-10 w-full md:w-auto text-base">{editing ? "Salvar" : "Cadastrar"}</Button>
-            {editing && <Button type="button" variant="outline" className="h-12 md:h-10 w-full md:w-auto" onClick={reset}>Cancelar</Button>}
-          </div>
-        </form>
-      </Card>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Dashboard</h2>
+        <p className="text-sm text-muted-foreground">Visão geral do controle de equipamentos e movimentações de TI.</p>
+      </div>
 
-      {/* Mobile: cards */}
-      <div className="md:hidden space-y-3">
-        {rows.length === 0 && <p className="text-center text-muted-foreground py-8">Nenhum colaborador cadastrado</p>}
-        {rows.map((c) => (
-          <Card key={c.id} className="p-4 space-y-2">
-            <div className="font-semibold text-base">{c.nome}</div>
-            <div className="text-sm text-muted-foreground">Matrícula: {c.matricula}</div>
-            <div className="text-sm text-muted-foreground">Setor: {c.setor}</div>
-            <div className="flex gap-2 pt-1">
-              <Button size="lg" variant="outline" className="flex-1 h-11" onClick={() => edit(c)}>Editar</Button>
-              <Button size="lg" variant="destructive" className="flex-1 h-11" onClick={() => remove(c.id)}>Excluir</Button>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {cards.map(({ label, value, icon: Icon }) => (
+          <Card key={label} className="p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">{label}</div>
+                <div className="text-3xl font-bold tracking-tight">{loading ? "-" : value}</div>
+              </div>
+              <div className="rounded-md bg-primary/10 p-2 text-primary">
+                <Icon className="h-5 w-5" />
+              </div>
             </div>
           </Card>
         ))}
       </div>
 
-      {/* Desktop: table */}
-      <Card className="hidden md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Matrícula</TableHead>
-              <TableHead>Setor</TableHead>
-              <TableHead className="w-40 text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 && (
-              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum colaborador cadastrado</TableCell></TableRow>
-            )}
-            {rows.map((c) => (
-              <TableRow key={c.id}>
-                <TableCell>{c.nome}</TableCell>
-                <TableCell>{c.matricula}</TableCell>
-                <TableCell>{c.setor}</TableCell>
-                <TableCell className="text-right space-x-2">
-                  <Button size="sm" variant="outline" onClick={() => edit(c)}>Editar</Button>
-                  <Button size="sm" variant="destructive" onClick={() => remove(c.id)}>Excluir</Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <Card className="p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold">Últimas Movimentações</h3>
+            <p className="text-sm text-muted-foreground">Entregas, devoluções e inspeções mais recentes.</p>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {loading ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">Carregando...</p>
+          ) : latestItems.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma movimentação registrada.</p>
+          ) : (
+            latestItems.map((item) => (
+              <div key={`${item.type}-${item.id}`} className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant={item.type === "entrega" ? "default" : item.type === "devolucao" ? "secondary" : "outline"}>
+                      {item.title}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">{formatDate(item.date)}</span>
+                  </div>
+                  <p className="mt-1 text-sm font-medium">{item.description}</p>
+                </div>
+                {item.type === "devolucao" && <RotateCcw className="hidden h-4 w-4 text-muted-foreground sm:block" />}
+              </div>
+            ))
+          )}
+        </div>
       </Card>
     </div>
   );

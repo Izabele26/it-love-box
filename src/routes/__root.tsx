@@ -7,9 +7,11 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
-import { Users, Laptop, PackageCheck, Undo2, ClipboardCheck, History } from "lucide-react";
+import { ClipboardCheck, LayoutDashboard, Laptop, Menu, PackageCheck, PanelLeftClose, PanelLeftOpen, Undo2, Users } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -81,68 +83,115 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 const NAV = [
-  { to: "/", label: "Colaboradores", icon: Users },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/colaboradores", label: "Colaboradores", icon: Users },
   { to: "/equipamentos", label: "Equipamentos", icon: Laptop },
   { to: "/entregas", label: "Entregas", icon: PackageCheck },
   { to: "/devolucoes", label: "Devoluções", icon: Undo2 },
   { to: "/inspecoes", label: "Inspeções Técnicas", icon: ClipboardCheck },
 ] as const;
 
-function NavItem({ to, label, icon: Icon }: { to: string; label: string; icon: React.ComponentType<{ className?: string }> }) {
+function NavItem({
+  to,
+  label,
+  icon: Icon,
+  collapsed = false,
+  onClick,
+}: {
+  to: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  collapsed?: boolean;
+  onClick?: () => void;
+}) {
   return (
     <Link
       to={to}
       activeOptions={{ exact: to === "/" }}
-      className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
-      activeProps={{ className: "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium bg-primary text-primary-foreground" }}
+      onClick={onClick}
+      title={collapsed ? label : undefined}
+      className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white ${collapsed ? "justify-center" : ""}`}
+      activeProps={{ className: `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium bg-white/15 text-white ${collapsed ? "justify-center" : ""}` }}
     >
-      <Icon className="h-4 w-4" />
-      <span>{label}</span>
+      <Icon className="h-5 w-5 shrink-0" />
+      {!collapsed && <span className="truncate">{label}</span>}
     </Link>
   );
 }
 
-function BottomNav() {
+function SidebarContent({ collapsed = false, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-card border-t pb-[env(safe-area-inset-bottom)]">
-      <ul className="grid grid-cols-5">
-        {NAV.map(({ to, label, icon: Icon }) => (
-          <li key={to}>
-            <Link
-              to={to}
-              activeOptions={{ exact: to === "/" }}
-              className="flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] text-muted-foreground active:bg-accent"
-              activeProps={{ className: "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] text-primary font-semibold" }}
-            >
-              <Icon className="h-5 w-5" />
-              <span>{label.split(" ")[0]}</span>
-            </Link>
-          </li>
+    <div className="flex h-full flex-col bg-slate-950 text-white">
+      <div className={`flex h-16 items-center border-b border-white/10 px-4 ${collapsed ? "justify-center" : "justify-start"}`}>
+        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white/10">
+          <Laptop className="h-5 w-5" />
+        </div>
+        {!collapsed && (
+          <div className="ml-3 min-w-0">
+            <div className="truncate text-sm font-semibold">Controle de TI</div>
+            <div className="truncate text-xs text-slate-400">Inventário e service desk</div>
+          </div>
+        )}
+      </div>
+      <nav className="flex-1 space-y-1 px-3 py-4">
+        {NAV.map((item) => (
+          <NavItem key={item.to} {...item} collapsed={collapsed} onClick={onNavigate} />
         ))}
-      </ul>
-    </nav>
+      </nav>
+    </div>
   );
 }
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <header className="border-b bg-card sticky top-0 z-30">
-          <div className="mx-auto max-w-6xl px-4 py-4">
-            <h1 className="text-lg md:text-xl font-semibold tracking-tight">Controle de TI</h1>
-            <nav className="mt-3 flex flex-wrap gap-1.5">
-              {NAV.map((item) => (
-                <NavItem key={item.to} {...item} />
-              ))}
-            </nav>
+      <div className="min-h-screen bg-slate-50">
+        <aside className={`fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-300 md:block ${collapsed ? "w-20" : "w-64"}`}>
+          <SidebarContent collapsed={collapsed} />
+        </aside>
+
+        <header className={`sticky top-0 z-20 border-b bg-white/95 backdrop-blur transition-[left] duration-300 md:left-auto ${collapsed ? "md:ml-20" : "md:ml-64"}`}>
+          <div className="flex h-16 items-center justify-between gap-3 px-4">
+            <div className="flex items-center gap-2">
+              <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" className="md:hidden">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Abrir menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-72 border-0 bg-slate-950 p-0 text-white">
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>Menu principal</SheetTitle>
+                  </SheetHeader>
+                  <SidebarContent onNavigate={() => setMobileOpen(false)} />
+                </SheetContent>
+              </Sheet>
+              <div>
+                <h1 className="text-lg font-semibold tracking-tight">Controle de TI</h1>
+                <p className="hidden text-xs text-muted-foreground sm:block">Dashboard de inventário e operações</p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="hidden md:inline-flex"
+              onClick={() => setCollapsed((value) => !value)}
+            >
+              {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+              <span className="ml-2">{collapsed ? "Expandir" : "Recolher"}</span>
+            </Button>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-3 md:px-4 py-4 md:py-6">
+
+        <main className={`px-3 py-4 transition-[margin] duration-300 md:px-6 md:py-6 ${collapsed ? "md:ml-20" : "md:ml-64"}`}>
           <Outlet />
         </main>
-        <BottomNav />
         <Toaster />
       </div>
     </QueryClientProvider>

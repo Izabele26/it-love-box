@@ -7,16 +7,11 @@ CREATE TABLE public.entrega_acessorios (
   modelo text,
   status text NOT NULL DEFAULT 'Entregue',
   observacao text,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_entrega_acessorios_entrega_id
   ON public.entrega_acessorios(entrega_id);
-
-CREATE TRIGGER trg_entrega_acessorios_updated_at
-BEFORE UPDATE ON public.entrega_acessorios
-FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.entrega_acessorios TO anon, authenticated;
 GRANT ALL ON public.entrega_acessorios TO service_role;

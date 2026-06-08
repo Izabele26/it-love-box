@@ -26,7 +26,6 @@ export type EquipamentoItem = {
   status: string;
   observacao: string | null;
   created_at: string;
-  updated_at: string;
 };
 
 export type CriarEquipamentoItem = {
@@ -53,7 +52,6 @@ export type EntregaAcessorio = {
   status: string;
   observacao: string | null;
   created_at: string;
-  updated_at: string;
 };
 
 export type CriarEntregaAcessorio = {
@@ -146,6 +144,7 @@ export async function excluirItem(id: string): Promise<void> {
 
 export async function listarAcessoriosPorEntrega(entregaId: string): Promise<EntregaAcessorio[]> {
   const { data, error } = await db
+    .schema("public")
     .from("entrega_acessorios")
     .select("*")
     .eq("entrega_id", entregaId)
@@ -157,6 +156,7 @@ export async function listarAcessoriosPorEntrega(entregaId: string): Promise<Ent
 
 export async function criarAcessorioEntrega(dados: CriarEntregaAcessorio): Promise<EntregaAcessorio> {
   const { data, error } = await db
+    .schema("public")
     .from("entrega_acessorios")
     .insert(dados)
     .select("*")
