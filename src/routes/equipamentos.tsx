@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -200,25 +200,15 @@ function Page() {
       <div className="md:hidden space-y-3">
         {rows.length === 0 && <p className="text-center text-muted-foreground py-8">Nenhum equipamento cadastrado</p>}
         {rows.map((eq) => (
-          <Card key={eq.id} className="p-4 space-y-3">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 flex-1 space-y-2">
-                <div className="flex items-start gap-2">
-                  <Link
-                    to="/equipamentos/$equipamentoId"
-                    params={{ equipamentoId: eq.id }}
-                    className="min-w-0 font-semibold text-primary underline-offset-4 hover:underline"
-                  >
-                    {eq.patrimonio}
-                  </Link>
-                  <Badge variant={statusVariant(eq.status)} className="shrink-0">{eq.status}</Badge>
-                </div>
-                <div className="text-sm">{eq.tipo} - {eq.marca}</div>
-                <div className="text-sm text-muted-foreground">{eq.modelo}</div>
-              </div>
-              <Button size="lg" variant="secondary" className="ml-auto h-11 shrink-0" onClick={() => setDetalhes(eq)}>Detalhes</Button>
+          <Card key={eq.id} className="p-4 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="font-semibold">{eq.patrimonio}</div>
+              <Badge variant={statusVariant(eq.status)}>{eq.status}</Badge>
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="text-sm">{eq.tipo} · {eq.marca}</div>
+            <div className="text-sm text-muted-foreground">{eq.modelo}</div>
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              <Button size="lg" variant="secondary" className="h-11" onClick={() => setDetalhes(eq)}>Detalhes</Button>
               <Button size="lg" variant="outline" className="h-11" onClick={() => edit(eq)}>Editar</Button>
               <Button size="lg" variant="destructive" className="h-11" onClick={() => remove(eq.id)}>Excluir</Button>
             </div>
@@ -236,7 +226,7 @@ function Page() {
               <TableHead>Marca</TableHead>
               <TableHead>Modelo</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-56 text-right">Ações</TableHead>
+              <TableHead className="w-40 text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -245,20 +235,12 @@ function Page() {
             )}
             {rows.map((eq) => (
               <TableRow key={eq.id}>
-                <TableCell>
-                  <Link
-                    to="/equipamentos/$equipamentoId"
-                    params={{ equipamentoId: eq.id }}
-                    className="font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {eq.patrimonio}
-                  </Link>
-                </TableCell>
+                <TableCell>{eq.patrimonio}</TableCell>
                 <TableCell>{eq.tipo}</TableCell>
                 <TableCell>{eq.marca}</TableCell>
                 <TableCell>{eq.modelo}</TableCell>
                 <TableCell>{eq.status}</TableCell>
-                <TableCell className="text-right whitespace-nowrap space-x-2">
+                <TableCell className="text-right space-x-2">
                   <Button size="sm" variant="secondary" onClick={() => setDetalhes(eq)}>Detalhes</Button>
                   <Button size="sm" variant="outline" onClick={() => edit(eq)}>Editar</Button>
                   <Button size="sm" variant="destructive" onClick={() => remove(eq.id)}>Excluir</Button>

@@ -9,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { db, type Colaborador, type Equipamento, type Movimentacao } from "@/lib/db";
 import { MovimentoWizard } from "@/components/movimento-wizard";
-import { MovimentacaoDetalhesDialog } from "@/components/movimentacao-detalhes-dialog";
 
 export const Route = createFileRoute("/devolucoes")({
   head: () => ({ meta: [{ title: "Devoluções" }] }),
@@ -20,7 +19,6 @@ function Page() {
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [rows, setRows] = useState<Movimentacao[]>([]);
-  const [detalhes, setDetalhes] = useState<Movimentacao | null>(null);
   const [form, setForm] = useState({ colaborador_id: "", equipamento_id: "", data: new Date().toISOString().slice(0, 10) });
 
   async function load() {
@@ -103,15 +101,10 @@ function Page() {
       <div className="md:hidden space-y-3">
         {rows.length === 0 && <p className="text-center text-muted-foreground py-8">Nenhuma devolução registrada</p>}
         {rows.map((m) => (
-          <Card key={m.id} className="p-4 space-y-3">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 flex-1 space-y-1">
-                <div className="text-xs text-muted-foreground">{new Date(m.data).toLocaleDateString("pt-BR")}</div>
-                <div className="font-semibold">{m.colaboradores?.nome ?? "-"}</div>
-                <div className="text-sm">{m.equipamentos ? `${m.equipamentos.patrimonio} - ${m.equipamentos.modelo}` : "-"}</div>
-              </div>
-              <Button size="lg" variant="secondary" className="ml-auto h-11 shrink-0" onClick={() => setDetalhes(m)}>Detalhes</Button>
-            </div>
+          <Card key={m.id} className="p-4 space-y-1">
+            <div className="text-xs text-muted-foreground">{new Date(m.data).toLocaleDateString("pt-BR")}</div>
+            <div className="font-semibold">{m.colaboradores?.nome ?? "-"}</div>
+            <div className="text-sm">{m.equipamentos ? `${m.equipamentos.patrimonio} · ${m.equipamentos.modelo}` : "-"}</div>
             <Button size="lg" variant="destructive" className="h-11 w-full mt-2" onClick={() => remove(m.id)}>Excluir</Button>
           </Card>
         ))}
@@ -124,7 +117,7 @@ function Page() {
               <TableHead>Data</TableHead>
               <TableHead>Colaborador</TableHead>
               <TableHead>Equipamento</TableHead>
-              <TableHead className="w-56 text-right">Ações</TableHead>
+              <TableHead className="w-32 text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -136,8 +129,7 @@ function Page() {
                 <TableCell>{new Date(m.data).toLocaleDateString("pt-BR")}</TableCell>
                 <TableCell>{m.colaboradores?.nome ?? "-"}</TableCell>
                 <TableCell>{m.equipamentos ? `${m.equipamentos.patrimonio} - ${m.equipamentos.modelo}` : "-"}</TableCell>
-                <TableCell className="text-right whitespace-nowrap space-x-2">
-                  <Button size="sm" variant="secondary" onClick={() => setDetalhes(m)}>Detalhes</Button>
+                <TableCell className="text-right">
                   <Button size="sm" variant="destructive" onClick={() => remove(m.id)}>Excluir</Button>
                 </TableCell>
               </TableRow>
@@ -145,18 +137,6 @@ function Page() {
           </TableBody>
         </Table>
       </Card>
-
-      <MovimentacaoDetalhesDialog
-        movimento={detalhes}
-        onClose={() => setDetalhes(null)}
-        titulo="Detalhes da Devolução"
-        colaboradorLabel="Colaborador devolvedor"
-        dataLabel="Data da devolução"
-        responsavelLabel="Responsável pelo recebimento"
-        observacoesLabel="Observações"
-        acessoriosLabel="Acessórios devolvidos"
-        condicaoLabel="Condição do equipamento"
-      />
     </div>
   );
 }
