@@ -45,6 +45,7 @@ export type Database = {
           marca: string
           modelo: string
           patrimonio: string
+          setor_id: string | null
           status: string
           tipo: string
         }
@@ -54,6 +55,7 @@ export type Database = {
           marca: string
           modelo: string
           patrimonio: string
+          setor_id?: string | null
           status?: string
           tipo: string
         }
@@ -63,10 +65,19 @@ export type Database = {
           marca?: string
           modelo?: string
           patrimonio?: string
+          setor_id?: string | null
           status?: string
           tipo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "equipamentos_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "setores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       historico_equipamentos: {
         Row: {
@@ -203,6 +214,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      setores: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
